@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Movimento & Dashboard - Eight Sistemas</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: sans-serif; margin: 0; background: #f4f4f4; }
+
+        .header {
+            background: white;
+            border-bottom: 3px solid #3b4cca;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header a  { text-decoration: none; font-weight: bold; color: #3b4cca; }
+        .header h2 { margin: 0; }
+
+        /* ── Filtros ── */
+        .filtro-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 18px 30px 0 30px;
+            flex-wrap: wrap;
+        }
+        .filtro-bar span {
+            font-size: 13px;
+            font-weight: bold;
+            color: #555;
+            margin-right: 4px;
+        }
+        .filtro-btn {
+            padding: 8px 18px;
+            border-radius: 20px;
+            border: 2px solid #3b4cca;
+            background: white;
+            color: #3b4cca;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.15s, color 0.15s;
+        }
+        .filtro-btn:hover  { background: #eef; }
+        .filtro-btn.ativo  { background: #3b4cca; color: white; }
+
+        /* ── Cards ── */
+        .cards {
+            display: flex;
+            gap: 20px;
+            padding: 20px 30px;
+            flex-wrap: wrap;
+        }
+        .card {
+            flex: 1;
+            min-width: 170px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px 25px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            border-left: 5px solid #3b4cca;
+        }
+        .card.verde   { border-left-color: #26a65b; }
+        .card.laranja { border-left-color: #f39c12; }
+        .card.vermelho{ border-left-color: #e74c3c; }
+
+        .card label { font-size: 11px; text-transform: uppercase; color: #888; font-weight: bold; }
+        .card .valor { font-size: 1.6rem; font-weight: bold; color: #333; margin-top: 6px; }
+        .card.verde   .valor { color: #26a65b; }
+        .card.laranja .valor { color: #f39c12; }
+        .card.vermelho .valor { color: #e74c3c; }
+        .card .periodo { font-size: 11px; color: #aaa; margin-top: 4px; }
+
+        /* ── Alertas ── */
+        .secao { padding: 0 30px 20px 30px; }
+        .secao h3 { margin-bottom: 10px; color: #333; }
+        .alerta-item {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 10px 15px;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        .alerta-item strong { color: #856404; }
+
+        /* ── Tabela ── */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.1); min-width: 600px; }
+        th { background: #3b4cca; color: white; padding: 12px 14px; text-align: left; font-size: 12px; text-transform: uppercase; }
+        td { padding: 10px 14px; border-bottom: 1px solid #eee; font-size: 13px; color: #555; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #f5f5ff; }
+
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+        .badge-entrada { background: #d4edda; color: #155724; }
+        .badge-saida   { background: #f8d7da; color: #721c24; }
+        .badge-venda   { background: #cce5ff; color: #004085; }
+        .badge-compra  { background: #e2e3e5; color: #383d41; }
+
+        .sem-registros {
+            text-align: center;
+            padding: 40px;
+            color: #aaa;
+            font-size: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <a href="/">&#8592; VOLTAR</a>
+    <h2>MOVIMENTO &amp; DASHBOARD</h2>
+    <div style="width:80px;"></div>
+</div>
+
+<!-- Filtros de período -->
+<div class="filtro-bar">
+    <span>&#128197; Período:</span>
+    {% set opcoes = [
+        ('diario',     'Diária'),
+        ('semanal',    'Semanal'),
+        ('mensal',     'Mensal'),
+        ('trimestral', 'Trimestral'),
+        ('semestral',  'Semestral'),
+        ('anual',      'Anual')
+    ] %}
+    {% for valor, label in opcoes %}
+        <a href="/movimento?filtro={{ valor }}"
+           class="filtro-btn {{ 'ativo' if filtro_ativo == valor else '' }}">
+            {{ label }}
+        </a>
+    {% endfor %}
+</div>
+
+<!-- Cards de resumo -->
+<div class="cards">
+    <div class="card verde">
+        <label>Total em Vendas</label>
+        <div class="valor">R$ {{ "%.2f"|format(total_vendas) }}</div>
+        <div class="periodo">{{ filtro_ativo | capitalize }}</div>
+    </div>
+    <div class="card laranja">
+        <label>Lucro Estimado</label>
+        <div class="valor">R$ {{ "%.2f"|format(total_lucro) }}</div>
+        <div class="periodo">{{ filtro_ativo | capitalize }}</div>
+    </div>
+    <div class="card">
+        <label>Total em Compras</label>
+        <div class="valor">R$ {{ "%.2f"|format(total_compras) }}</div>
+        <div class="periodo">{{ filtro_ativo | capitalize }}</div>
+    </div>
+    <div class="card vermelho">
+        <label>Estoque Baixo</label>
+        <div class="valor">{{ alertas|length }}</div>
+        <div class="periodo">produto(s)</div>
+    </div>
+</div>
+
+<!-- Alertas de estoque baixo -->
+{% if alertas %}
+<div class="secao">
+    <h3>⚠️ Alertas de Estoque Baixo</h3>
+    {% for p in alertas %}
+    <div class="alerta-item">
+        <strong>{{ p.nome }}</strong> — Quantidade atual: <strong>{{ p.quantidade }}</strong> | Mínimo: {{ p.estoque_minimo }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Tabela de movimentações -->
+<div class="secao">
+    <h3>📋 Movimentações — Período: <strong>{{ filtro_ativo | capitalize }}</strong></h3>
+    <div class="table-wrap">
+        {% if movimentacoes %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Produto</th>
+                    <th>Tipo</th>
+                    <th>Origem</th>
+                    <th>Qtd</th>
+                    <th>Valor Unit. (R$)</th>
+                    <th>Data</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in movimentacoes %}
+                <tr>
+                    <td>{{ m.id }}</td>
+                    <td>{{ m.produto_nome }}</td>
+                    <td>
+                        <span class="badge {{ 'badge-entrada' if m.tipo == 'entrada' else 'badge-saida' }}">
+                            {{ m.tipo | upper }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge {{ 'badge-venda' if m.origem == 'venda' else 'badge-compra' }}">
+                            {{ m.origem | upper }}
+                        </span>
+                    </td>
+                    <td>{{ m.quantidade }}</td>
+                    <td>{{ "%.2f"|format(m.valor_unitario|float) if m.valor_unitario else "—" }}</td>
+                    <td>{{ m.data }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="sem-registros">
+            📭 Nenhuma movimentação encontrada para o período selecionado.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+</body>
+</html>
