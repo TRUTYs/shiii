@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}Movimento — Eight Sistemas{% endblock %}
+{% block nav_movimento %}active{% endblock %}
+{% block page_title %}Movimento & Dashboard{% endblock %}
+{% block page_sub %}Relatório de entradas, saídas e lucro{% endblock %}
+
+{% block content %}
+<style>
+  .filtro-bar { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .filtro-btn {
+    padding: 6px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--muted);
+    font-size: 12.5px;
+    font-weight: 500;
+    font-family: var(--font);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.14s;
+  }
+  .filtro-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .filtro-btn.ativo { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .filtro-label { font-size: 12px; color: var(--muted); margin-right: 2px; }
+  .alerta-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--red-dim);
+    border: 1px solid #4a1f1f;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #fca5a5;
+  }
+  .alerta-item strong { color: #f87171; }
+  .alerta-item svg { width: 14px; height: 14px; color: var(--red); flex-shrink: 0; }
+  .alertas-wrap { display: flex; flex-direction: column; gap: 6px; }
+</style>
+
+<!-- Filtros de período -->
+<div class="filtro-bar">
+  <span class="filtro-label">📅 Período:</span>
+  {% set opcoes = [
+    ('diario',     'Diária'),
+    ('semanal',    'Semanal'),
+    ('mensal',     'Mensal'),
+    ('trimestral', 'Trimestral'),
+    ('semestral',  'Semestral'),
+    ('anual',      'Anual')
+  ] %}
+  {% for valor, label in opcoes %}
+  <a href="/movimento?filtro={{ valor }}"
+     class="filtro-btn {{ 'ativo' if filtro_ativo == valor else '' }}">
+    {{ label }}
+  </a>
+  {% endfor %}
+</div>
+
+<!-- Cards de resumo -->
+<div class="cards-grid">
+  <div class="stat-card success">
+    <div class="card-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      Total em Vendas
+    </div>
+    <div class="card-value green">R$ {{ "%.2f"|format(total_vendas) }}</div>
+    <div class="card-sub">{{ filtro_ativo | capitalize }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="card-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Lucro Estimado
+    </div>
+    <div class="card-value amber">R$ {{ "%.2f"|format(total_lucro) }}</div>
+    <div class="card-sub">{{ filtro_ativo | capitalize }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="card-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+      Total em Compras
+    </div>
+    <div class="card-value blue">R$ {{ "%.2f"|format(total_compras) }}</div>
+    <div class="card-sub">{{ filtro_ativo | capitalize }}</div>
+  </div>
+  <div class="stat-card {{ 'danger' if alertas|length > 0 else '' }}">
+    <div class="card-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+      Estoque Baixo
+    </div>
+    <div class="card-value {{ 'red' if alertas|length > 0 else 'green' }}">{{ alertas|length }}</div>
+    <div class="card-sub">produto(s) em alerta</div>
+  </div>
+</div>
+
+<!-- Alertas de estoque baixo -->
+{% if alertas %}
+<div>
+  <div style="font-size:13px;font-weight:500;margin-bottom:8px;color:var(--red);">⚠️ Produtos com estoque abaixo do mínimo</div>
+  <div class="alertas-wrap">
+    {% for p in alertas %}
+    <div class="alerta-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <strong>{{ p.nome }}</strong>
+      <span style="color:var(--muted);">—</span>
+      <span>Qtd. atual: <strong>{{ p.quantidade }}</strong> | Mínimo: {{ p.estoque_minimo }}</span>
+      <a href="/estoque" style="margin-left:auto;font-size:11px;color:var(--blue);text-decoration:none;">Ir ao estoque →</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Tabela de movimentações -->
+<div class="tcard">
+  <div class="tcard-header">
+    <span class="tcard-title">Movimentações — {{ filtro_ativo | capitalize }}</span>
+    <span class="text-muted" style="font-size:12px;">{{ movimentacoes|length }} registro(s)</span>
+  </div>
+  {% if movimentacoes %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Produto</th>
+        <th>Tipo</th>
+        <th>Origem</th>
+        <th>Qtd.</th>
+        <th>Valor Unit. (R$)</th>
+        <th>Data</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in movimentacoes %}
+      <tr>
+        <td class="mono">{{ m.id }}</td>
+        <td class="fw500">{{ m.produto_nome }}</td>
+        <td>
+          <span class="badge-status {{ 'badge-entrada' if m.tipo == 'entrada' else 'badge-saida' }}">
+            {{ m.tipo | upper }}
+          </span>
+        </td>
+        <td>
+          <span class="badge-status
+            {% if m.origem == 'venda' %}badge-venda
+            {% elif m.origem == 'compra' %}badge-compra
+            {% else %}badge-ajuste{% endif %}">
+            {{ m.origem | upper }}
+          </span>
+        </td>
+        <td>{{ m.quantidade }}</td>
+        <td class="mono">{{ "%.2f"|format(m.valor_unitario|float) if m.valor_unitario else '—' }}</td>
+        <td class="text-muted mono">{{ m.data }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+    Nenhuma movimentação no período selecionado.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

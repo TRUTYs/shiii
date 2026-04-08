@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}Fornecedores — Eight Sistemas{% endblock %}
+{% block nav_fornecedores %}active{% endblock %}
+{% block page_title %}Fornecedores{% endblock %}
+{% block page_sub %}Cadastro e gestão de fornecedores{% endblock %}
+
+{% block content %}
+<style>
+  .tag-cnpj { font-family: var(--mono); font-size: 12px; background: var(--blue-dim); color: var(--blue); padding: 2px 8px; border-radius: 6px; }
+</style>
+
+<!-- Botão de abrir cadastro -->
+<div>
+  <button class="btn btn-blue" onclick="abrirCadastro()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Novo Fornecedor
+  </button>
+</div>
+
+<!-- FORM: EDITAR -->
+<div class="form-panel" id="form-editar-forn">
+  <div class="form-panel-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    Editar Fornecedor
+  </div>
+  <form id="edit-forn-form" method="POST">
+    <div class="form-grid">
+      <div class="form-group form-col2">
+        <label>Nome *</label>
+        <input type="text" name="nome_fornecedor" id="edit-nome-forn" required>
+      </div>
+      <div class="form-group">
+        <label>Telefone</label>
+        <input type="text" name="contato_fornecedor" id="edit-contato-forn" oninput="maskTelefone(this)" maxlength="16" placeholder="(00) 00000-0000">
+      </div>
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" name="email_fornecedor" id="edit-email-forn" placeholder="exemplo@email.com">
+      </div>
+      <div class="form-group">
+        <label>CNPJ</label>
+        <input type="text" name="cnpj_fornecedor" id="edit-cnpj-forn" oninput="maskCNPJ(this)" maxlength="18" placeholder="00.000.000/0000-00">
+      </div>
+      <div class="form-group form-col2">
+        <label>Localização / Endereço</label>
+        <input type="text" name="localizacao_fornecedor" id="edit-local-forn" placeholder="Cidade, Estado ou endereço completo">
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:12px;">
+      <button type="submit" class="btn btn-amber">Salvar Alterações</button>
+      <button type="button" class="btn btn-ghost" onclick="fecharEdicao()">Cancelar</button>
+    </div>
+  </form>
+</div>
+
+<!-- FORM: CADASTRAR -->
+<div class="form-panel" id="form-novo-forn">
+  <div class="form-panel-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Novo Fornecedor
+  </div>
+  <form action="/cadastrar_fornecedor" method="POST">
+    <div class="form-grid">
+      <div class="form-group form-col2">
+        <label>Nome *</label>
+        <input type="text" name="nome_fornecedor" placeholder="Nome da empresa ou pessoa" required>
+      </div>
+      <div class="form-group">
+        <label>Telefone</label>
+        <input type="text" name="contato_fornecedor" oninput="maskTelefone(this)" maxlength="16" placeholder="(00) 00000-0000">
+      </div>
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" name="email_fornecedor" placeholder="exemplo@email.com">
+      </div>
+      <div class="form-group">
+        <label>CNPJ</label>
+        <input type="text" name="cnpj_fornecedor" oninput="maskCNPJ(this)" maxlength="18" placeholder="00.000.000/0000-00">
+      </div>
+      <div class="form-group form-col2">
+        <label>Localização / Endereço</label>
+        <input type="text" name="localizacao_fornecedor" placeholder="Cidade, Estado ou endereço completo">
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:12px;">
+      <button type="submit" class="btn btn-blue">Cadastrar</button>
+      <button type="button" class="btn btn-ghost" onclick="fecharEdicao()">Cancelar</button>
+    </div>
+  </form>
+</div>
+
+<!-- TABELA -->
+<div class="tcard">
+  <div class="tcard-header">
+    <span class="tcard-title">Fornecedores cadastrados</span>
+    <span class="text-muted" style="font-size:12px;">{{ fornecedores|length }} fornecedor(es)</span>
+  </div>
+  {% if fornecedores %}
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nome</th>
+        <th>Telefone</th>
+        <th>E-mail</th>
+        <th>CNPJ</th>
+        <th>Localização</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in fornecedores %}
+      <tr>
+        <td class="mono">{{ f.id }}</td>
+        <td class="fw500">{{ f.nome }}</td>
+        <td class="text-muted">{{ f.contato if f.contato else '—' }}</td>
+        <td>
+          {% if f.email %}
+          <a href="mailto:{{ f.email }}" style="color:var(--blue);text-decoration:none;font-size:13px;">{{ f.email }}</a>
+          {% else %}<span class="text-muted">—</span>{% endif %}
+        </td>
+        <td>
+          {% if f.cnpj %}<span class="tag-cnpj">{{ f.cnpj }}</span>
+          {% else %}<span class="text-muted">—</span>{% endif %}
+        </td>
+        <td class="text-muted">{{ f.localizacao if f.localizacao else '—' }}</td>
+        <td>
+          <div style="display:flex;gap:5px;">
+            <button class="btn btn-ghost btn-sm"
+                    onclick="prepararEdicao('{{ f.id }}','{{ f.nome }}','{{ f.contato or '' }}','{{ f.email or '' }}','{{ f.cnpj or '' }}','{{ f.localizacao or '' }}')">
+              Editar
+            </button>
+            <a class="btn btn-danger btn-sm" href="#"
+               onclick="confirmarExclusao('{{ f.id }}','{{ f.nome }}');return false;">
+              Excluir
+            </a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Nenhum fornecedor cadastrado ainda.
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function abrirCadastro() {
+  document.getElementById('form-editar-forn').classList.remove('open');
+  document.getElementById('form-novo-forn').classList.toggle('open');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function fecharEdicao() {
+  document.getElementById('form-editar-forn').classList.remove('open');
+  document.getElementById('form-novo-forn').classList.remove('open');
+}
+function prepararEdicao(id, nome, contato, email, cnpj, local) {
+  document.getElementById('form-novo-forn').classList.remove('open');
+  document.getElementById('edit-nome-forn').value    = nome;
+  document.getElementById('edit-contato-forn').value = contato;
+  document.getElementById('edit-email-forn').value   = email;
+  document.getElementById('edit-cnpj-forn').value    = cnpj;
+  document.getElementById('edit-local-forn').value   = local;
+  document.getElementById('edit-forn-form').action   = '/editar_fornecedor/' + id;
+  document.getElementById('form-editar-forn').classList.add('open');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function confirmarExclusao(id, nome) {
+  if (confirm(`Excluir "${nome}"?\n\nOs produtos vinculados ficarão sem fornecedor.`)) {
+    window.location.href = '/excluir_fornecedor/' + id;
+  }
+}
+function maskTelefone(input) {
+  let v = input.value.replace(/\D/g, '');
+  v = v.length <= 10
+    ? v.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{4})(\d)/, '$1-$2')
+    : v.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2');
+  input.value = v;
+}
+function maskCNPJ(input) {
+  let v = input.value.replace(/\D/g, '');
+  v = v.replace(/^(\d{2})(\d)/, '$1.$2')
+       .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+       .replace(/\.(\d{3})(\d)/, '.$1/$2')
+       .replace(/(\d{4})(\d)/, '$1-$2');
+  input.value = v;
+}
+</script>
+{% endblock %}

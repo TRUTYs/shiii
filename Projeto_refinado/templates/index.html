@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Eight Sistemas{% endblock %}
+{% block nav_home %}active{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_sub %}Visão geral do sistema{% endblock %}
+
+{% block topbar_extra %}
+<div class="search-wrap">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+  <input type="text" placeholder="Busca rápida...">
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+  .chart-title { font-size: 13px; font-weight: 500; margin-bottom: 14px; }
+  .bar-group { display: flex; align-items: flex-end; gap: 6px; height: 120px; padding-bottom: 18px; }
+  .bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+  .bars { display: flex; gap: 3px; align-items: flex-end; height: 100%; }
+  .bar { border-radius: 4px 4px 0 0; min-height: 3px; transition: opacity 0.2s; cursor: pointer; }
+  .bar:hover { opacity: .75; }
+  .bar.entrada { background: var(--blue); }
+  .bar.saida   { background: var(--purple); }
+  .bar-lbl { font-size: 10px; color: var(--muted2); }
+  .legend { display: flex; gap: 12px; margin-bottom: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+  .legend-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .most-sold { display: flex; flex-direction: column; gap: 10px; }
+  .prod-row { display: flex; flex-direction: column; gap: 4px; }
+  .prod-row-top { display: flex; justify-content: space-between; font-size: 12px; color: var(--text); }
+  .prod-track { background: var(--bg); border-radius: 99px; height: 5px; overflow: hidden; }
+  .prod-fill { height: 100%; border-radius: 99px; transition: width .6s ease; }
+  .shortcut-row { display: flex; gap: 10px; }
+  .shortcut-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 13px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .shortcut-btn:hover { background: var(--card2); border-color: var(--border2); color: var(--text); }
+  .shortcut-btn svg { width: 16px; height: 16px; }
+</style>
+
+<!-- Atalhos rápidos -->
+<div class="shortcut-row">
+  <a href="/estoque" class="shortcut-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+    Gerenciar Estoque
+  </a>
+  <a href="/movimento" class="shortcut-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+    Ver Movimentações
+  </a>
+  <a href="/fornecedores" class="shortcut-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    Fornecedores
+  </a>
+</div>
+
+<div class="charts-row">
+  <!-- Gráfico de barras -->
+  <div class="chart-card">
+    <div class="chart-title">Entradas vs Saídas — últimos 6 meses</div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Entradas</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>Saídas</div>
+    </div>
+    <div class="bar-group" id="chart-bars"></div>
+  </div>
+
+  <!-- Produtos mais vendidos (placeholder visual) -->
+  <div class="chart-card">
+    <div class="chart-title">Acesso rápido ao sistema</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px;">
+      <a href="/estoque" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:9px;text-decoration:none;color:var(--text);transition:border-color .15s;" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="width:32px;height:32px;background:var(--blue-dim);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" width="16" height="16"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:500;">Estoque</div>
+          <div style="font-size:11px;color:var(--muted);">Cadastrar, vender e comprar produtos</div>
+        </div>
+      </a>
+      <a href="/movimento?filtro=mensal" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:9px;text-decoration:none;color:var(--text);transition:border-color .15s;" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="width:32px;height:32px;background:var(--green-dim);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" width="16" height="16"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:500;">Movimento & Dashboard</div>
+          <div style="font-size:11px;color:var(--muted);">Vendas, lucro e histórico por período</div>
+        </div>
+      </a>
+      <a href="/fornecedores" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:9px;text-decoration:none;color:var(--text);transition:border-color .15s;" onmouseover="this.style.borderColor='var(--amber)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="width:32px;height:32px;background:var(--amber-dim);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" width="16" height="16"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:500;">Fornecedores</div>
+          <div style="font-size:11px;color:var(--muted);">CNPJ, contato, e-mail e localização</div>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+const months = ['Nov','Dez','Jan','Fev','Mar','Abr'];
+const entradas = [210,280,320,290,340,347];
+const saidas   = [180,230,270,250,300,289];
+const maxVal   = Math.max(...entradas,...saidas);
+const barsEl   = document.getElementById('chart-bars');
+months.forEach((m,i) => {
+  const hE = Math.round((entradas[i]/maxVal)*100);
+  const hS = Math.round((saidas[i]/maxVal)*100);
+  barsEl.innerHTML += `<div class="bar-wrap">
+    <div class="bars">
+      <div class="bar entrada" style="height:${hE}%;width:13px" title="Entradas: ${entradas[i]}"></div>
+      <div class="bar saida"  style="height:${hS}%;width:13px" title="Saídas: ${saidas[i]}"></div>
+    </div>
+    <div class="bar-lbl">${m}</div>
+  </div>`;
+});
+</script>
+{% endblock %}
