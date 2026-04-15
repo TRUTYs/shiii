@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Eight Sistemas{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:       #0B1120;
+      --surface:  #111827;
+      --card:     #1A2235;
+      --card2:    #1F2D42;
+      --border:   #263348;
+      --border2:  #2E3D55;
+      --blue:     #3B82F6;
+      --blue-dim: #1D3461;
+      --red:      #EF4444;
+      --red-dim:  #2D1515;
+      --green:    #10B981;
+      --green-dim:#0C2118;
+      --amber:    #F59E0B;
+      --amber-dim:#2A1F08;
+      --purple:   #8B5CF6;
+      --text:     #E8EFF8;
+      --muted:    #7A8FA8;
+      --muted2:   #4A5F7A;
+      --sidebar-w: 228px;
+      --header-h:  58px;
+      --radius:    12px;
+      --font: 'DM Sans', sans-serif;
+      --mono: 'DM Mono', monospace;
+    }
+
+    body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; }
+
+    /* ─── LAYOUT ─── */
+    .app { display: flex; height: 100vh; overflow: hidden; }
+
+    /* ─── SIDEBAR ─── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .sidebar-logo {
+      height: var(--header-h);
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--blue);
+      letter-spacing: -0.2px;
+    }
+    .sidebar-logo svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+    .nav { flex: 1; padding: 10px 8px; display: flex; flex-direction: column; gap: 1px; overflow-y: auto; }
+    .nav-section {
+      font-size: 10px;
+      color: var(--muted2);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      padding: 14px 10px 5px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 12px;
+      border-radius: 9px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 400;
+      transition: background 0.14s, color 0.14s;
+      cursor: pointer;
+    }
+    .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .nav-item:hover { background: var(--card2); color: var(--text); }
+    .nav-item.active { background: var(--blue-dim); color: var(--blue); font-weight: 500; }
+
+    .sidebar-footer {
+      padding: 14px 16px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted2);
+    }
+
+    /* ─── MAIN ─── */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+    /* ─── HEADER ─── */
+    .topbar {
+      height: var(--header-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-shrink: 0;
+    }
+    .topbar-title { font-size: 15px; font-weight: 600; color: var(--text); }
+    .topbar-sub { font-size: 12px; color: var(--muted); }
+    .topbar-spacer { flex: 1; }
+
+    .search-wrap { position: relative; }
+    .search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); width: 14px; height: 14px; pointer-events: none; }
+    .search-wrap input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 7px 12px 7px 32px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: var(--font);
+      outline: none;
+      width: 220px;
+      transition: border-color 0.15s, width 0.2s;
+    }
+    .search-wrap input:focus { border-color: var(--blue); width: 260px; }
+    .search-wrap input::placeholder { color: var(--muted2); }
+
+    .icon-btn {
+      width: 34px; height: 34px;
+      border-radius: 9px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.14s;
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .icon-btn:hover { background: var(--card2); color: var(--text); }
+    .icon-btn svg { width: 15px; height: 15px; }
+    .notif-dot {
+      position: absolute; top: 5px; right: 5px;
+      width: 7px; height: 7px;
+      background: var(--red);
+      border-radius: 50%;
+      border: 1.5px solid var(--surface);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+
+    .avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* ─── CONTENT ─── */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .content::-webkit-scrollbar { width: 4px; }
+    .content::-webkit-scrollbar-track { background: transparent; }
+    .content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+
+    /* ─── CARDS ─── */
+    .cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 13px; }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .stat-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+    .stat-card.danger { border-color: #4a1f1f; background: var(--red-dim); }
+    .stat-card.success { border-color: #0d3025; background: var(--green-dim); }
+    .card-label { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 5px; text-transform: uppercase; letter-spacing: .6px; }
+    .card-label svg { width: 12px; height: 12px; }
+    .card-value { font-size: 28px; font-weight: 500; line-height: 1; }
+    .card-value.blue   { color: var(--blue); }
+    .card-value.red    { color: var(--red); }
+    .card-value.green  { color: var(--green); }
+    .card-value.amber  { color: var(--amber); }
+    .card-sub { font-size: 11px; color: var(--muted2); }
+
+    /* ─── TABLE CARD ─── */
+    .tcard {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .tcard-header {
+      padding: 13px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .tcard-title { font-size: 13px; font-weight: 500; }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      padding: 9px 18px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-weight: 500;
+    }
+    tbody tr { transition: background 0.1s; }
+    tbody tr:hover { background: #1c2d42; }
+    tbody td { padding: 10px 18px; font-size: 13px; border-bottom: 1px solid #1a2535; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 9px;
+      border-radius: 99px;
+    }
+    .badge-ok  { background: #0d2e20; color: #34d399; }
+    .badge-low { background: #2d1515; color: #f87171; animation: blink 2s ease-in-out infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.45} }
+
+    .badge-entrada { background: #1d3461; color: #93c5fd; }
+    .badge-saida   { background: #2d1b4e; color: #c4b5fd; }
+    .badge-venda   { background: #0d2e20; color: #6ee7b7; }
+    .badge-compra  { background: #1f2937; color: #9ca3af; }
+    .badge-ajuste  { background: #2a1f08; color: #fcd34d; }
+
+    /* ─── BUTTONS ─── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: var(--font);
+      cursor: pointer;
+      transition: opacity 0.15s, background 0.15s;
+      border: none;
+      text-decoration: none;
+    }
+    .btn svg { width: 13px; height: 13px; }
+    .btn-blue   { background: var(--blue); color: #fff; }
+    .btn-blue:hover { opacity: .88; }
+    .btn-green  { background: var(--green); color: #fff; }
+    .btn-green:hover { opacity: .88; }
+    .btn-ghost  { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+    .btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
+    .btn-danger { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+    .btn-danger:hover { border-color: var(--red); color: var(--red); }
+    .btn-amber  { background: var(--amber); color: #0B1120; }
+    .btn-amber:hover { opacity: .88; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    /* ─── FORM PANEL ─── */
+    .form-panel {
+      background: var(--card);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      animation: slideDown 0.2s ease;
+    }
+    .form-panel.open { display: flex; }
+    @keyframes slideDown { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+    .form-panel-title { font-size: 13px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 7px; }
+    .form-panel-title svg { width: 14px; height: 14px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+    .form-col2 { grid-column: span 2; }
+    .form-col3 { grid-column: span 3; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+    .form-group input,
+    .form-group select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 11px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: var(--font);
+      outline: none;
+      transition: border-color 0.15s;
+      width: 100%;
+    }
+    .form-group input:focus,
+    .form-group select:focus { border-color: var(--blue); }
+    .form-group input::placeholder { color: var(--muted2); }
+    .form-group select option { background: var(--card); }
+    .form-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* ─── FLASH MESSAGES ─── */
+    .flash-wrap { display: flex; flex-direction: column; gap: 6px; }
+    .flash-msg {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      animation: slideDown 0.2s ease;
+    }
+    .flash-msg.erro    { background: #2d1515; border: 1px solid #6b2020; color: #fca5a5; }
+    .flash-msg.sucesso { background: #0c2118; border: 1px solid #0d4c2e; color: #6ee7b7; }
+    .flash-icon { font-size: 15px; }
+    .flash-close { margin-left: auto; background: none; border: none; color: inherit; cursor: pointer; opacity: .6; font-size: 16px; padding: 0 2px; }
+    .flash-close:hover { opacity: 1; }
+
+    /* ─── ALERT BANNER ─── */
+    .alert-banner {
+      background: #2d1a1a;
+      border: 1px solid #7f2020;
+      border-radius: 10px;
+      padding: 11px 16px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 13px;
+      color: #fca5a5;
+    }
+    .alert-banner svg { width: 15px; height: 15px; color: var(--red); flex-shrink: 0; }
+
+    /* ─── MISC ─── */
+    .mono { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+    .text-red { color: var(--red); }
+    .text-green { color: var(--green); }
+    .text-amber { color: var(--amber); }
+    .text-blue  { color: var(--blue); }
+    .text-muted { color: var(--muted); }
+    .fw500 { font-weight: 500; }
+    .empty-state { padding: 48px; text-align: center; color: var(--muted); font-size: 13px; }
+    .empty-state svg { width: 36px; height: 36px; margin: 0 auto 10px; display: block; opacity: .4; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+      </svg>
+      Eight Sistemas
+    </div>
+    <nav class="nav">
+      <div class="nav-section">Menu</div>
+      <a href="/" class="nav-item {% block nav_home %}{% endblock %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="/estoque" class="nav-item {% block nav_estoque %}{% endblock %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        Estoque
+      </a>
+      <a href="/movimento" class="nav-item {% block nav_movimento %}{% endblock %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        Movimento
+      </a>
+      <a href="/fornecedores" class="nav-item {% block nav_fornecedores %}{% endblock %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Fornecedores
+      </a>
+    </nav>
+    <div class="sidebar-footer">Eight Sistemas &copy; 2026</div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+        <div class="topbar-sub">{% block page_sub %}{% endblock %}</div>
+      </div>
+      <div class="topbar-spacer"></div>
+      {% block topbar_extra %}{% endblock %}
+      <div style="display:flex;align-items:center;gap:10px;">
+        <a href="/logout" class="icon-btn" title="Sair">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </a>
+        <div class="avatar" title="{{ session.get('usuario_nome', 'Usuário') }}">
+          {{ session.get('usuario_nome', 'US')[:2].upper() }}
+        </div>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- FLASH MESSAGES -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-wrap">
+          {% for cat, msg in messages %}
+          <div class="flash-msg {{ cat }}" id="fl{{ loop.index }}">
+            <span class="flash-icon">{{ '❌' if cat == 'erro' else '✅' }}</span>
+            <span>{{ msg }}</span>
+            <button class="flash-close" onclick="this.parentElement.remove()">✕</button>
+          </div>
+          {% endfor %}
+        </div>
+        <script>
+          setTimeout(() => {
+            document.querySelectorAll('.flash-msg').forEach(el => {
+              el.style.transition = 'opacity .4s';
+              el.style.opacity = '0';
+              setTimeout(() => el.remove(), 400);
+            });
+          }, 5000);
+        </script>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+</body>
+</html>

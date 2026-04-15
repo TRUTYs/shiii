@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Eight Sistemas{% endblock %}
+{% block nav_home %}active{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_sub %}Visão geral do sistema{% endblock %}
+
+{% block content %}
+<style>
+  .charts-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+  .chart-title { font-size: 13px; font-weight: 500; margin-bottom: 14px; color: var(--text); }
+  .bar-group { display: flex; align-items: flex-end; gap: 5px; height: 130px; padding-bottom: 20px; }
+  .bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+  .bars { display: flex; gap: 3px; align-items: flex-end; height: 100%; }
+  .bar { border-radius: 4px 4px 0 0; min-height: 3px; transition: opacity 0.2s; cursor: pointer; }
+  .bar:hover { opacity: 0.75; }
+  .bar.entrada { background: var(--blue); }
+  .bar.saida   { background: var(--purple); }
+  .bar-lbl { font-size: 10px; color: var(--muted2); white-space: nowrap; }
+  .legend { display: flex; gap: 12px; margin-bottom: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+  .legend-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .most-sold { display: flex; flex-direction: column; gap: 10px; }
+  .prod-row { display: flex; flex-direction: column; gap: 4px; }
+  .prod-row-top { display: flex; justify-content: space-between; font-size: 12px; color: var(--text); }
+  .prod-track { background: var(--bg); border-radius: 99px; height: 5px; overflow: hidden; }
+  .prod-fill { height: 100%; border-radius: 99px; transition: width .6s ease; }
+  .empty-chart { display:flex; align-items:center; justify-content:center; height:100px; color:var(--muted); font-size:13px; }
+</style>
+
+<!-- Cards de resumo rápido -->
+<div class="cards-grid">
+  <div class="stat-card">
+    <div class="card-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      Total de Produtos
+    </div>
+    <div class="card-value blue">{{ total_produtos }}</div>
+    <div class="card-sub">itens cadastrados</div>
+  </div>
+  <div class="stat-card {{ 'danger' if alertas_count > 0 else '' }}">
+    <div class="card-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+      Estoque Baixo
+    </div>
+    <div class="card-value {{ 'red' if alertas_count > 0 else 'green' }}">{{ alertas_count }}</div>
+    <div class="card-sub">produto(s) em alerta</div>
+  </div>
+  <div class="stat-card success">
+    <div class="card-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      Vendas este mês
+    </div>
+    <div class="card-value green">R$ {{ "%.2f"|format(total_vendas_mes) }}</div>
+    <div class="card-sub">últimos 30 dias</div>
+  </div>
+  <div class="stat-card">
+    <div class="card-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      Fornecedores
+    </div>
+    <div class="card-value blue">{{ total_fornecedores }}</div>
+    <div class="card-sub">cadastrados</div>
+  </div>
+</div>
+
+<div class="charts-row">
+  <!-- Gráfico de barras -->
+  <div class="chart-card">
+    <div class="chart-title">Entradas vs Saídas — últimos 6 meses</div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Entradas</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>Saídas</div>
+    </div>
+    {% if graf_labels %}
+    <div class="bar-group" id="chart-bars"></div>
+    {% else %}
+    <div class="empty-chart">Nenhuma movimentação nos últimos 6 meses</div>
+    {% endif %}
+  </div>
+
+  <!-- Top produtos mais vendidos -->
+  <div class="chart-card">
+    <div class="chart-title">Mais vendidos</div>
+    {% if top_vendidos %}
+    <div class="most-sold">
+      {% set colors = ['#3B82F6','#8B5CF6','#10B981','#F59E0B','#F97316'] %}
+      {% for p in top_vendidos %}
+      <div class="prod-row">
+        <div class="prod-row-top">
+          <span>{{ p.nome }}</span>
+          <span style="color:var(--muted)">{{ p.total }} un.</span>
+        </div>
+        <div class="prod-track">
+          <div class="prod-fill" style="width:{{ p.pct }}%;background:{{ colors[loop.index0 % 5] }}"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-chart">Nenhuma venda registrada ainda</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Estoque rápido -->
+<div class="tcard">
+  <div class="tcard-header">
+    <span class="tcard-title">Estoque rápido</span>
+    <a href="/estoque" class="btn btn-ghost btn-sm">Ver todos →</a>
+  </div>
+  {% if estoque_rapido %}
+  <table>
+    <thead>
+      <tr>
+        <th>Produto</th>
+        <th>Categoria</th>
+        <th>Quantidade</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in estoque_rapido[:8] %}
+      <tr {% if not p.ok %}style="background:#1a0d0d"{% endif %}>
+        <td class="fw500">{{ p.nome }}</td>
+        <td>
+          <span style="font-size:11px;background:var(--card2);border:1px solid var(--border);padding:2px 8px;border-radius:99px;color:var(--muted);">
+            {{ p.categoria }}
+          </span>
+        </td>
+        <td style="font-weight:500;color:{{ 'var(--red)' if not p.ok else 'var(--green)' }}">{{ p.quantidade }}</td>
+        <td>
+          <span class="badge-status {{ 'badge-ok' if p.ok else 'badge-low' }}">
+            {{ 'OK' if p.ok else 'Baixo estoque' }}
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+    Nenhum produto cadastrado ainda.
+  </div>
+  {% endif %}
+</div>
+
+<script>
+const labels   = {{ graf_labels | tojson }};
+const entradas = {{ graf_entradas | tojson }};
+const saidas   = {{ graf_saidas | tojson }};
+const maxVal   = Math.max(...entradas, ...saidas, 1);
+const barsEl   = document.getElementById('chart-bars');
+if (barsEl && labels.length) {
+  labels.forEach((m, i) => {
+    const hE = Math.max(Math.round((entradas[i] / maxVal) * 100), 3);
+    const hS = Math.max(Math.round((saidas[i]   / maxVal) * 100), 3);
+    barsEl.innerHTML += `<div class="bar-wrap">
+      <div class="bars">
+        <div class="bar entrada" style="height:${hE}%;width:12px" title="Entradas ${m}: ${entradas[i]}"></div>
+        <div class="bar saida"  style="height:${hS}%;width:12px" title="Saídas ${m}: ${saidas[i]}"></div>
+      </div>
+      <div class="bar-lbl">${m}</div>
+    </div>`;
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}Estoque — Eight Sistemas{% endblock %}
+{% block nav_estoque %}active{% endblock %}
+{% block page_title %}Estoque{% endblock %}
+{% block page_sub %}Produtos, compras e vendas{% endblock %}
+
+{% block topbar_extra %}
+<div class="search-wrap">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+  <input type="text" id="inputPesquisa" onkeyup="filtrarProdutos()" placeholder="Pesquisar produto...">
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- Botões de ação -->
+<div style="display:flex;gap:8px;flex-wrap:wrap;">
+  <button class="btn btn-blue" onclick="abrirSomente('form-compra')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Novo Produto
+  </button>
+
+</div>
+
+<!-- FORM: NOVO PRODUTO / COMPRA -->
+<div class="form-panel" id="form-compra">
+  <div class="form-panel-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <span id="titulo-compra">Cadastrar Novo Produto</span>
+  </div>
+  <form id="form-compra-final" action="/adicionar_produto" method="POST">
+    <div class="form-grid">
+      <div class="form-group form-col2">
+        <label>Nome *</label>
+        <input type="text" name="nome" placeholder="Nome do produto" required>
+      </div>
+      <div class="form-group">
+        <label>Categoria</label>
+        <input type="text" name="categoria" placeholder="Ex: Eletrônicos">
+      </div>
+      <div class="form-group">
+        <label>Quantidade *</label>
+        <input type="number" name="quantidade" placeholder="0" min="0" required>
+      </div>
+      <div class="form-group">
+        <label>Preço de Custo (R$)</label>
+        <input type="number" step="0.01" name="preco_custo" placeholder="0,00" min="0">
+      </div>
+      <div class="form-group">
+        <label>Preço de Venda (R$)</label>
+        <input type="number" step="0.01" name="preco_venda" placeholder="0,00" min="0">
+      </div>
+      <div class="form-group">
+        <label>Fornecedor</label>
+        <select name="fornecedor_id">
+          <option value="">Sem fornecedor</option>
+          {% for f in fornecedores %}
+          <option value="{{ f.id }}">{{ f.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:12px;">
+      <button type="submit" class="btn btn-blue">Salvar</button>
+      <button type="button" class="btn btn-ghost" onclick="fecharTodos()">Cancelar</button>
+    </div>
+  </form>
+</div>
+
+<!-- FORM: VENDA -->
+<div class="form-panel" id="form-venda">
+  <div class="form-panel-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+    <span id="titulo-venda">Registrar Venda</span>
+  </div>
+  <form id="form-venda-final" method="POST">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Quantidade *</label>
+        <input type="number" name="quantidade" placeholder="0" min="1" required>
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:12px;">
+      <button type="submit" class="btn btn-green">Confirmar Venda</button>
+      <button type="button" class="btn btn-ghost" onclick="fecharTodos()">Cancelar</button>
+    </div>
+  </form>
+</div>
+
+<!-- FORM: REPOSIÇÃO -->
+<div class="form-panel" id="form-reposicao">
+  <div class="form-panel-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+    <span id="titulo-reposicao">Repor Estoque</span>
+  </div>
+  <form id="form-reposicao-final" method="POST">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Quantidade *</label>
+        <input type="number" name="quantidade" placeholder="0" min="1" required>
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:12px;">
+      <button type="submit" class="btn btn-blue">Confirmar Compra</button>
+      <button type="button" class="btn btn-ghost" onclick="fecharTodos()">Cancelar</button>
+    </div>
+  </form>
+</div>
+
+<!-- FORM: EDITAR PRODUTO -->
+<div class="form-panel" id="form-ajuste">
+  <div class="form-panel-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    Editar Produto
+  </div>
+  <form id="edit-form" method="POST">
+    <div class="form-grid">
+      <div class="form-group form-col2">
+        <label>Nome *</label>
+        <input type="text" name="nome" id="edit-nome" required>
+      </div>
+      <div class="form-group">
+        <label>Categoria</label>
+        <input type="text" name="categoria" id="edit-desc">
+      </div>
+      <div class="form-group">
+        <label>Quantidade *</label>
+        <input type="number" name="quantidade" id="edit-qtd" min="0">
+      </div>
+      <div class="form-group">
+        <label>Preço de Custo (R$)</label>
+        <input type="number" step="0.01" name="preco_custo" id="edit-custo" min="0">
+      </div>
+      <div class="form-group">
+        <label>Preço de Venda (R$)</label>
+        <input type="number" step="0.01" name="preco_venda" id="edit-preco" min="0">
+      </div>
+      <div class="form-group">
+        <label>Fornecedor</label>
+        <select name="fornecedor_id" id="edit-forn">
+          <option value="">Sem fornecedor</option>
+          {% for f in fornecedores %}
+          <option value="{{ f.id }}">{{ f.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:12px;">
+      <button type="submit" class="btn btn-amber">Salvar Alterações</button>
+      <button type="button" class="btn btn-ghost" onclick="fecharTodos()">Cancelar</button>
+    </div>
+  </form>
+</div>
+
+<!-- TABELA -->
+<div class="tcard">
+  <div class="tcard-header">
+    <span class="tcard-title">Produtos em estoque</span>
+    <span class="text-muted" style="font-size:12px;">{{ produtos|length }} produto(s)</span>
+  </div>
+  {% if produtos %}
+  <table>
+    <thead>
+      <tr>
+        <th>Cód.</th>
+        <th>Nome</th>
+        <th>Categoria</th>
+        <th>Qtd.</th>
+        <th>Custo (R$)</th>
+        <th>Venda (R$)</th>
+        <th>Fornecedor</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in produtos %}
+      <tr {% if p.quantidade <= p.estoque_minimo %}style="background:#1a0d0d"{% endif %}>
+        <td class="mono">{{ p.id }}</td>
+        <td class="fw500">{{ p.nome }}</td>
+        <td>
+          <span style="font-size:11px;background:var(--card2);border:1px solid var(--border);padding:2px 8px;border-radius:99px;color:var(--muted);">
+            {{ p.categoria if p.categoria else '—' }}
+          </span>
+        </td>
+        <td class="{{ 'text-red fw500' if p.quantidade <= p.estoque_minimo else 'text-green' }}">
+          {{ p.quantidade }}{% if p.quantidade <= p.estoque_minimo %} ⚠️{% endif %}
+        </td>
+        <td class="mono">{{ "%.2f"|format(p.preco_custo|float) if p.preco_custo else '—' }}</td>
+        <td class="mono">{{ "%.2f"|format(p.preco_venda|float) if p.preco_venda else '—' }}</td>
+        <td class="text-muted">{{ p.fornecedor_nome }}</td>
+        <td>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-sm"
+                    onclick="prepararVenda('{{ p.id }}','{{ p.nome }}')">Vender</button>
+            <button class="btn btn-ghost btn-sm"
+                    onclick="prepararReposicao('{{ p.id }}','{{ p.nome }}')">Comprar</button>
+            <button class="btn btn-ghost btn-sm"
+                    onclick="prepararEdicao('{{ p.id }}','{{ p.nome }}','{{ p.categoria }}','{{ p.quantidade }}','{{ p.preco_venda }}','{{ p.preco_custo }}','{{ p.fornecedor_id }}')">Editar</button>
+            <a class="btn btn-danger btn-sm"
+               href="{{ url_for('excluir_produto', id=p.id) }}"
+               onclick="return confirm('Excluir {{ p.nome }}?')">Excluir</a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+    Nenhum produto cadastrado ainda.
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function fecharTodos() {
+  document.querySelectorAll('.form-panel').forEach(el => el.classList.remove('open'));
+}
+function abrirSomente(id) {
+  fecharTodos();
+  document.getElementById(id).classList.add('open');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function prepararVenda(id, nome) {
+  document.getElementById('titulo-venda').innerText = 'Vendendo: ' + nome;
+  document.getElementById('form-venda-final').action = '/vender_produto/' + id;
+  abrirSomente('form-venda');
+}
+function prepararReposicao(id, nome) {
+  document.getElementById('titulo-reposicao').innerText = 'Repondo: ' + nome;
+  document.getElementById('form-reposicao-final').action = '/comprar_produto/' + id;
+  abrirSomente('form-reposicao');
+}
+function prepararEdicao(id, nome, cat, qtd, preco, custo, forn_id) {
+  document.getElementById('edit-nome').value  = nome;
+  document.getElementById('edit-desc').value  = cat;
+  document.getElementById('edit-qtd').value   = qtd;
+  document.getElementById('edit-preco').value = preco;
+  document.getElementById('edit-custo').value = custo;
+  document.getElementById('edit-form').action = '/editar_produto/' + id;
+  const sel = document.getElementById('edit-forn');
+  sel.value = (forn_id && forn_id !== 'None' && forn_id !== '') ? forn_id : '';
+  abrirSomente('form-ajuste');
+}
+function filtrarProdutos() {
+  const f = document.getElementById('inputPesquisa').value.toLowerCase();
+  document.querySelectorAll('tbody tr').forEach(tr => {
+    const nome = tr.querySelector('td:nth-child(2)');
+    if (nome) tr.style.display = nome.textContent.toLowerCase().includes(f) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}
